@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Calendar } from '@/components/ui/calendar';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -18,33 +18,43 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { format } from 'date-fns';
-import { getCurrentProfile, type Profile } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { format } from "date-fns";
+import { getCurrentProfile, type Profile } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const timeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
 ];
 
 const formSchema = z.object({
   date: z.date({
-    required_error: 'Please select a date',
+    required_error: "Please select a date",
   }),
   time: z.string({
-    required_error: 'Please select a time',
+    required_error: "Please select a time",
   }),
   doctorId: z.string().optional(),
 });
@@ -59,7 +69,7 @@ export default function AppointmentsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date(),
-      time: '',
+      time: "",
       doctorId: undefined,
     },
   });
@@ -71,23 +81,28 @@ export default function AppointmentsPage() {
 
       // Load doctors
       const { data: doctorsData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'doctor');
-      
+        .from("profiles")
+        .select("*")
+        .eq("role", "doctor");
+
       if (doctorsData) {
         setDoctors(doctorsData);
       }
 
       // Load appointments
       const { data: appointmentsData } = await supabase
-        .from('appointments')
-        .select(`
+        .from("appointments")
+        .select(
+          `
           *,
           doctor:doctor_id(full_name),
           patient:patient_id(full_name)
-        `)
-        .eq(userProfile?.role === 'patient' ? 'patient_id' : 'doctor_id', userProfile?.id);
+        `
+        )
+        .eq(
+          userProfile?.role === "patient" ? "patient_id" : "doctor_id",
+          userProfile?.id
+        );
 
       if (appointmentsData) {
         setAppointments(appointmentsData);
@@ -101,43 +116,46 @@ export default function AppointmentsPage() {
       if (!profile) return;
 
       const dateTime = new Date(values.date);
-      const [hours, minutes] = values.time.split(':');
+      const [hours, minutes] = values.time.split(":");
       dateTime.setHours(parseInt(hours), parseInt(minutes));
 
-      const { error } = await supabase
-        .from('appointments')
-        .insert({
-          patient_id: profile.role === 'patient' ? profile.id : values.doctorId,
-          doctor_id: profile.role === 'doctor' ? profile.id : values.doctorId,
-          date_time: dateTime.toISOString(),
-          status: 'scheduled',
-        });
+      const { error } = await supabase.from("appointments").insert({
+        patient_id: profile.role === "patient" ? profile.id : values.doctorId,
+        doctor_id: profile.role === "doctor" ? profile.id : values.doctorId,
+        date_time: dateTime.toISOString(),
+        status: "scheduled",
+      });
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Appointment scheduled successfully',
+        title: "Success",
+        description: "Appointment scheduled successfully",
       });
 
       // Refresh appointments
       const { data } = await supabase
-        .from('appointments')
-        .select(`
+        .from("appointments")
+        .select(
+          `
           *,
           doctor:doctor_id(full_name),
           patient:patient_id(full_name)
-        `)
-        .eq(profile.role === 'patient' ? 'patient_id' : 'doctor_id', profile.id);
+        `
+        )
+        .eq(
+          profile.role === "patient" ? "patient_id" : "doctor_id",
+          profile.id
+        );
 
       if (data) {
         setAppointments(data);
       }
     } catch (error) {
       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to schedule appointment',
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to schedule appointment",
       });
     }
   }
@@ -160,7 +178,10 @@ export default function AppointmentsPage() {
               <DialogTitle>Schedule New Appointment</DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="date"
@@ -171,7 +192,11 @@ export default function AppointmentsPage() {
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
+                        disabled={(date) =>
+                          date < new Date() ||
+                          date.getDay() === 0 ||
+                          date.getDay() === 6
+                        }
                         className="rounded-md border"
                       />
                       <FormMessage />
@@ -202,7 +227,7 @@ export default function AppointmentsPage() {
                     </FormItem>
                   )}
                 />
-                {profile.role === 'patient' && (
+                {profile.role === "patient" && (
                   <FormField
                     control={form.control}
                     name="doctorId"
@@ -243,23 +268,19 @@ export default function AppointmentsPage() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-medium">
-                  {profile.role === 'patient'
-                    ? `Dr. ${appointment.doctor.full_name}`
-                    : appointment.patient.full_name}
+                  {profile.role === "patient"
+                    ? `Dr. ${appointment.doctor?.full_name}`
+                    : appointment.patient?.full_name}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(appointment.date_time), 'PPP')}
+                  {format(new Date(appointment.date_time), "PPP")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(appointment.date_time), 'p')}
+                  {format(new Date(appointment.date_time), "p")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="capitalize"
-                >
+                <Button variant="outline" size="sm" className="capitalize">
                   {appointment.status}
                 </Button>
               </div>
